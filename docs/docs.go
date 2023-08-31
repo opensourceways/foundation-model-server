@@ -16,16 +16,16 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/v1/inference/qa": {
+        "/v1/chat": {
             "post": {
-                "description": "send a question",
+                "description": "ask a question",
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
-                    "QA"
+                    "Chat"
                 ],
-                "summary": "send a question",
+                "summary": "ask a question",
                 "parameters": [
                     {
                         "description": "body of asking a question",
@@ -33,7 +33,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controller.qaRequest"
+                            "$ref": "#/definitions/controller.askQuestionRequest"
                         }
                     }
                 ],
@@ -43,6 +43,26 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/controller.ResponseData"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/chat/models": {
+            "get": {
+                "description": "list all models",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "list all models",
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/controller.ResponseData"
                         }
@@ -64,7 +84,7 @@ const docTemplate = `{
                 }
             }
         },
-        "controller.qaRequest": {
+        "controller.askQuestionRequest": {
             "type": "object",
             "required": [
                 "model_name",
