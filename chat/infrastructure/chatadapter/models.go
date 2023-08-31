@@ -138,7 +138,7 @@ func (impl *modelWatcher) getModelAdress(m string) (string, error) {
 		return "", err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, impl.cfg.ListModelsURL, buf)
+	req, err := http.NewRequest(http.MethodPost, impl.cfg.GetWorkerAddressURL, buf)
 	if err != nil {
 		return "", err
 	}
