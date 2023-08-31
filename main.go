@@ -8,8 +8,8 @@ import (
 	liboptions "github.com/opensourceways/server-common-lib/options"
 	"github.com/sirupsen/logrus"
 
+	"github.com/opensourceways/foundation-model-server/chat/infrastructure/chatadapter"
 	"github.com/opensourceways/foundation-model-server/config"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/infrastructure/qaimpl"
 	"github.com/opensourceways/foundation-model-server/server"
 )
 
@@ -61,14 +61,14 @@ func main() {
 		return
 	}
 
-	chat, err := qaimpl.Init(&cfg.Chat.Model)
+	chatAdapter, err := chatadapter.Init(&cfg.Chat.Model)
 	if err != nil {
 		logrus.Errorf("init chat model failed, err:%s", err.Error())
 
 		return
 	}
 
-	defer chat.Exit()
+	defer chatAdapter.Exit()
 
 	// run
 	server.StartWebServer(o.service.Port, o.service.GracePeriod, cfg)

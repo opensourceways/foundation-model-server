@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"github.com/opensourceways/foundation-model-server/inferenceqa/app"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/domain/dp"
+	"github.com/opensourceways/foundation-model-server/chat/app"
+	"github.com/opensourceways/foundation-model-server/chat/domain/dp"
 )
 
-type qaRequest struct {
+type askQuestionRequest struct {
 	Question          string  `json:"question"              binding:"required"`
 	ModelName         string  `json:"model_name"            binding:"required"`
 	TopP              float32 `json:"top_p"`
@@ -17,7 +17,7 @@ type qaRequest struct {
 	MaxNewTokens      int     `json:"max_new_tokens"`
 }
 
-func (req *qaRequest) toCmd() (cmd app.CmdToAskQuestion, err error) {
+func (req *askQuestionRequest) toCmd() (cmd app.CmdToAskQuestion, err error) {
 	if cmd.Question, err = dp.NewQuestion(req.Question); err != nil {
 		return
 	}

@@ -1,24 +1,24 @@
-package flowcontrollerimpl
+package flowcontrolleradapter
 
 import (
 	"github.com/opensourceways/foundation-model-server/allerror"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/domain/flowcontroller"
+	"github.com/opensourceways/foundation-model-server/common/domain/flowcontroller"
 )
 
-func Init(n int) *flowControllerImpl {
+func Init(n int) *flowControllerAdapter {
 	c := make(chan struct{}, n)
 	for i := 0; i < n; i++ {
 		c <- struct{}{}
 	}
 
-	return &flowControllerImpl{c}
+	return &flowControllerAdapter{c}
 }
 
-type flowControllerImpl struct {
+type flowControllerAdapter struct {
 	c chan struct{}
 }
 
-func (s *flowControllerImpl) Do(w flowcontroller.Work) error {
+func (s *flowControllerAdapter) Do(w flowcontroller.Work) error {
 	select {
 	case e := <-s.c:
 		err := w()

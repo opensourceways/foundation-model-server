@@ -1,9 +1,9 @@
-package qa
+package chat
 
 import (
 	"io"
 
-	"github.com/opensourceways/foundation-model-server/inferenceqa/domain/dp"
+	"github.com/opensourceways/foundation-model-server/chat/domain/dp"
 )
 
 type Question struct {
@@ -23,7 +23,7 @@ type QuestionParameter struct {
 	Echo              int     `json:"echo"`
 }
 
-type QA interface {
+type Chat interface {
 	Ask(*Question) error
 	AllModels() []string
 	IsValidModelName(string) bool

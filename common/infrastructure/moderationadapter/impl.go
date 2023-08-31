@@ -1,4 +1,4 @@
-package moderationimpl
+package moderationadapter
 
 import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
@@ -9,7 +9,7 @@ import (
 	"github.com/opensourceways/foundation-model-server/allerror"
 )
 
-func Init(cfg *Config) *moderationImpl {
+func Init(cfg *Config) *moderationAdapter {
 	auth := basic.NewCredentialsBuilder().
 		WithAk(cfg.AccessKey).
 		WithSk(cfg.SecretKey).
@@ -23,14 +23,14 @@ func Init(cfg *Config) *moderationImpl {
 			Build(),
 	)
 
-	return &moderationImpl{cli}
+	return &moderationAdapter{cli}
 }
 
-type moderationImpl struct {
+type moderationAdapter struct {
 	cli *moderation.ModerationClient
 }
 
-func (s *moderationImpl) CheckText(content string) error {
+func (s *moderationAdapter) CheckText(content string) error {
 	request := &model.RunTextModerationRequest{
 		Body: &model.TextDetectionReq{
 			Data: &model.TextDetectionDataReq{

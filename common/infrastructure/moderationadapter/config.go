@@ -1,4 +1,4 @@
-package moderationimpl
+package moderationadapter
 
 type Config struct {
 	Endpoint   string `json:"endpoint"       required:"true"`

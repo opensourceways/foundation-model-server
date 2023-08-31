@@ -6,36 +6,37 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 
+	"github.com/opensourceways/foundation-model-server/chat/app"
 	commonctl "github.com/opensourceways/foundation-model-server/common/controller"
 	"github.com/opensourceways/foundation-model-server/common/controller/middleware"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/app"
 )
 
-type QAController struct {
-	service app.QAService
+type ChatController struct {
+	service app.ChatAppService
 }
 
-func AddRouteForQAController(r *gin.RouterGroup, s app.QAService) {
-	ctl := QAController{
+func AddRouteForChatController(r *gin.RouterGroup, s app.ChatAppService) {
+	ctl := ChatController{
 		service: s,
 	}
 
 	m := middleware.AccessTokenChecking()
 
-	r.POST("/v1/inference/qa", m, ctl.Ask)
+	r.POST("/v1/chat", m, ctl.Ask)
+	r.POST("/v1/chat/models", m, ctl.Models)
 }
 
 // Ask
-// @Summary send a question
-// @Description send a question
-// @Tags  QA
+// @Summary ask a question
+// @Description ask a question
+// @Tags  Chat
 // @Accept json
-// @Param  param  body  qaRequest  true  "body of asking a question"
+// @Param  param  body  askQuestionRequest  true  "body of asking a question"
 // @Success 201
 // @Failure 400 {object} commonctl.ResponseData
-// @Router /v1/inference/qa [post]
-func (ctl QAController) Ask(ctx *gin.Context) {
-	var req qaRequest
+// @Router /v1/chat [post]
+func (ctl ChatController) Ask(ctx *gin.Context) {
+	var req askQuestionRequest
 
 	if err := ctx.ShouldBindBodyWith(&req, binding.JSON); err != nil {
 		commonctl.SendBadRequestBody(ctx, err)
@@ -66,10 +67,10 @@ func (ctl QAController) Ask(ctx *gin.Context) {
 // Models
 // @Summary list all models
 // @Description list all models
-// @Tags  QA
+// @Tags  Chat
 // @Accept json
 // @Success 200 {object} commonctl.ResponseData
-// @Router /v1/inference/qa [get]
-func (ctl QAController) Models(ctx *gin.Context) {
+// @Router /v1/chat/models [get]
+func (ctl ChatController) Models(ctx *gin.Context) {
 	commonctl.SendRespOfGet(ctx, ctl.service.Models())
 }

@@ -11,16 +11,16 @@ import (
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	chatapp "github.com/opensourceways/foundation-model-server/chat/app"
+	chatctl "github.com/opensourceways/foundation-model-server/chat/controller"
+	"github.com/opensourceways/foundation-model-server/chat/domain/dp"
+	chatservice "github.com/opensourceways/foundation-model-server/chat/domain/service"
+	"github.com/opensourceways/foundation-model-server/chat/infrastructure/chatadapter"
 	"github.com/opensourceways/foundation-model-server/common/controller/middleware"
+	"github.com/opensourceways/foundation-model-server/common/infrastructure/flowcontrolleradapter"
+	"github.com/opensourceways/foundation-model-server/common/infrastructure/moderationadapter"
 	"github.com/opensourceways/foundation-model-server/config"
 	"github.com/opensourceways/foundation-model-server/docs"
-	qaapp "github.com/opensourceways/foundation-model-server/inferenceqa/app"
-	qactl "github.com/opensourceways/foundation-model-server/inferenceqa/controller"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/domain/dp"
-	chatservice "github.com/opensourceways/foundation-model-server/inferenceqa/domain/service"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/infrastructure/flowcontrollerimpl"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/infrastructure/moderationimpl"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/infrastructure/qaimpl"
 )
 
 func StartWebServer(port int, timeout time.Duration, cfg *config.Config) {
@@ -54,20 +54,20 @@ func setRouter(engine *gin.Engine, cfg *config.Config) {
 }
 
 func setApiV1(v1 *gin.RouterGroup, cfg *config.Config) {
-	m := moderationimpl.Init(&cfg.Moderation)
+	m := moderationadapter.Init(&cfg.Moderation)
 
-	chat := qaimpl.ChatServiceInstance()
+	chat := chatadapter.ChatAdapter()
 
-	s := chatservice.NewQAService(
-		m, flowcontrollerimpl.Init(cfg.Chat.MaxConcurrent), chat,
+	s := chatservice.NewChatService(
+		m, flowcontrolleradapter.Init(cfg.Chat.MaxConcurrent), chat,
 	)
 
 	dp.Init(cfg.Chat.Model.MaxLengthOfQuestion, chat)
 
 	middleware.Init(&cfg.Middleware)
 
-	qactl.AddRouteForQAController(
-		v1, qaapp.NewQAService(s),
+	chatctl.AddRouteForChatController(
+		v1, chatapp.NewChatAppService(s),
 	)
 }
 

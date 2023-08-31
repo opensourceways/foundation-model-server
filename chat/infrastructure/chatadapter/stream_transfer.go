@@ -1,4 +1,4 @@
-package qaimpl
+package chatadapter
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package qaimpl
+package chatadapter
 
 type Config struct {
 	MaxLengthOfQuestion  int    `json:"max_length_of_question"`

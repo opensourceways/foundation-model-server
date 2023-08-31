@@ -1,4 +1,4 @@
-package qaimpl
+package chatadapter
 
 import (
 	"bytes"
@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
-	port "github.com/opensourceways/foundation-model-server/inferenceqa/domain/qa"
+	port "github.com/opensourceways/foundation-model-server/chat/domain/chat"
 	"github.com/opensourceways/foundation-model-server/utils"
 )
 
-var instance *qaImpl
+var instance *chatAdapter
 
-func Init(cfg *Config) (*qaImpl, error) {
-	v := &qaImpl{
+func Init(cfg *Config) (*chatAdapter, error) {
+	v := &chatAdapter{
 		cfg:          *cfg,
 		cli:          utils.NewHttpClient(3, 1),
 		stop:         make(chan struct{}),
@@ -35,11 +35,11 @@ func Init(cfg *Config) (*qaImpl, error) {
 	return v, nil
 }
 
-func ChatServiceInstance() *qaImpl {
+func ChatAdapter() *chatAdapter {
 	return instance
 }
 
-type qaImpl struct {
+type chatAdapter struct {
 	cfg          Config
 	cli          utils.HttpClient
 	mutex        sync.RWMutex
@@ -49,7 +49,7 @@ type qaImpl struct {
 	modelAddress map[string]string
 }
 
-func (impl *qaImpl) Ask(q *port.Question) error {
+func (impl *chatAdapter) Ask(q *port.Question) error {
 	v := chatRequest{
 		Models:            q.ModelName.ModelName(),
 		Prompt:            q.Question.Question(),
@@ -79,7 +79,7 @@ func (impl *qaImpl) Ask(q *port.Question) error {
 	})
 }
 
-func (impl *qaImpl) AllModels() (r []string) {
+func (impl *chatAdapter) AllModels() (r []string) {
 	impl.mutex.RLock()
 	r = append(r, impl.allModels...)
 	impl.mutex.Unlock()
@@ -87,7 +87,7 @@ func (impl *qaImpl) AllModels() (r []string) {
 	return
 }
 
-func (impl *qaImpl) IsValidModelName(m string) (b bool) {
+func (impl *chatAdapter) IsValidModelName(m string) (b bool) {
 	impl.mutex.RLock()
 	_, b = impl.modelAddress[m]
 	impl.mutex.Unlock()
@@ -95,21 +95,21 @@ func (impl *qaImpl) IsValidModelName(m string) (b bool) {
 	return
 }
 
-func (impl *qaImpl) MaxLengthOfQuestion() int {
+func (impl *chatAdapter) MaxLengthOfQuestion() int {
 	return impl.cfg.MaxLengthOfQuestion
 }
 
-func (impl *qaImpl) start() {
+func (impl *chatAdapter) start() {
 	go impl.watch()
 }
 
-func (impl *qaImpl) Exit() {
+func (impl *chatAdapter) Exit() {
 	close(impl.stop)
 
 	<-impl.stopped
 }
 
-func (impl *qaImpl) watch() {
+func (impl *chatAdapter) watch() {
 	interval := time.Minute
 	timer := time.NewTimer(interval)
 
@@ -134,7 +134,7 @@ func (impl *qaImpl) watch() {
 	}
 }
 
-func (impl *qaImpl) refreshModels() error {
+func (impl *chatAdapter) refreshModels() error {
 	if err := impl.refreshWorkers(); err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func (impl *qaImpl) refreshModels() error {
 	return nil
 }
 
-func (impl *qaImpl) refreshWorkers() error {
+func (impl *chatAdapter) refreshWorkers() error {
 	req, err := http.NewRequest(http.MethodPost, impl.cfg.RefreshAllWorkersURL, nil)
 	if err != nil {
 		return err
@@ -178,7 +178,7 @@ func (impl *qaImpl) refreshWorkers() error {
 	return err
 }
 
-func (impl *qaImpl) listModels() ([]string, error) {
+func (impl *chatAdapter) listModels() ([]string, error) {
 	req, err := http.NewRequest(http.MethodPost, impl.cfg.ListModelsURL, nil)
 	if err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func (impl *qaImpl) listModels() ([]string, error) {
 	return v.Models, err
 }
 
-func (impl *qaImpl) getModelAdress(m string) (string, error) {
+func (impl *chatAdapter) getModelAdress(m string) (string, error) {
 	buf := &bytes.Buffer{}
 	if err := jsonMarshal(&getModelAdressReq{m}, buf); err != nil {
 		return "", err

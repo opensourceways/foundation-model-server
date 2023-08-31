@@ -7,7 +7,7 @@
 *.dll
 *.so
 *.dylib
-*.b$
+*.b
 foundation-model-server
 
 # Test binary, built with `go test -c`

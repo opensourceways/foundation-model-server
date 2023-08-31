@@ -3,9 +3,9 @@ package config
 import (
 	"github.com/opensourceways/server-common-lib/utils"
 
+	"github.com/opensourceways/foundation-model-server/chat/infrastructure/chatadapter"
 	"github.com/opensourceways/foundation-model-server/common/controller/middleware"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/infrastructure/moderationimpl"
-	"github.com/opensourceways/foundation-model-server/inferenceqa/infrastructure/qaimpl"
+	"github.com/opensourceways/foundation-model-server/common/infrastructure/moderationadapter"
 )
 
 func LoadConfig(path string) (*Config, error) {
@@ -30,29 +30,21 @@ type configSetDefault interface {
 	SetDefault()
 }
 
-/*
-type domainConfig struct {
-	domain.Config
-
-	DomainPrimitive dp.Config `json:"domain_primitive"`
-}
-*/
-
-type inferenceQAConfig struct {
-	MaxConcurrent int           `json:"max_concurrent"`
-	Model         qaimpl.Config `json:"model"`
+type chatConfig struct {
+	MaxConcurrent int                `json:"max_concurrent"`
+	Model         chatadapter.Config `json:"model"`
 }
 
-func (cfg *inferenceQAConfig) SetDefault() {
+func (cfg *chatConfig) SetDefault() {
 	if cfg.MaxConcurrent <= 0 {
 		cfg.MaxConcurrent = 100
 	}
 }
 
 type Config struct {
-	Middleware middleware.Config     `json:"middleware"`
-	Moderation moderationimpl.Config `json:"moderation"`
-	Chat       inferenceQAConfig     `json:"chat"`
+	Middleware middleware.Config        `json:"middleware"`
+	Moderation moderationadapter.Config `json:"moderation"`
+	Chat       chatConfig               `json:"chat"`
 }
 
 func (cfg *Config) configItems() []interface{} {
