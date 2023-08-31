@@ -27,7 +27,7 @@ type modelWatcher struct {
 func (impl *modelWatcher) getAllModels() (r []string) {
 	impl.mutex.RLock()
 	r = append(r, impl.allModels...)
-	impl.mutex.Unlock()
+	impl.mutex.RUnlock()
 
 	return
 }
@@ -35,7 +35,7 @@ func (impl *modelWatcher) getAllModels() (r []string) {
 func (impl *modelWatcher) hasModel(m string) (b bool) {
 	impl.mutex.RLock()
 	_, b = impl.modelAddress[m]
-	impl.mutex.Unlock()
+	impl.mutex.RUnlock()
 
 	return
 }

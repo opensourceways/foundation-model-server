@@ -32,7 +32,9 @@ type chatService struct {
 }
 
 func (impl *chatService) Ask(q *Question) error {
-	if err := impl.m.CheckText(q.Question.Question()); err != nil {
+	content := q.Question.Question()
+
+	if err := impl.m.CheckText(content); err != nil {
 		return err
 	}
 

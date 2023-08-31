@@ -17,7 +17,7 @@ func NewModelName(v string) (ModelName, error) {
 		return nil, errors.New("invalid modelName")
 	}
 
-	return nil, nil
+	return modelName(v), nil
 }
 
 type modelName string
