@@ -80,7 +80,7 @@
             ],
             "properties": {
                 "echo": {
-                    "type": "integer"
+                    "type": "boolean"
                 },
                 "max_new_tokens": {
                     "type": "integer"
@@ -98,7 +98,10 @@
                     "type": "string"
                 },
                 "stop_token_ids": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "temperature": {
                     "type": "number"

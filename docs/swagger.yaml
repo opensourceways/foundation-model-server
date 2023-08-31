@@ -10,7 +10,7 @@ definitions:
   controller.askQuestionRequest:
     properties:
       echo:
-        type: integer
+        type: boolean
       max_new_tokens:
         type: integer
       model_name:
@@ -22,7 +22,9 @@ definitions:
       stop:
         type: string
       stop_token_ids:
-        type: string
+        items:
+          type: integer
+        type: array
       temperature:
         type: number
       top_p:

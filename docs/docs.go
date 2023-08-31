@@ -92,7 +92,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "echo": {
-                    "type": "integer"
+                    "type": "boolean"
                 },
                 "max_new_tokens": {
                     "type": "integer"
@@ -110,7 +110,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "stop_token_ids": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "temperature": {
                     "type": "number"
