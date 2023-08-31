@@ -1,0 +1,59 @@
+definitions:
+  controller.ResponseData:
+    properties:
+      code:
+        type: string
+      data: {}
+      msg:
+        type: string
+    type: object
+  controller.qaRequest:
+    properties:
+      echo:
+        type: integer
+      max_new_tokens:
+        type: integer
+      model_name:
+        type: string
+      question:
+        type: string
+      repetition_penalty:
+        type: number
+      stop:
+        type: string
+      stop_token_ids:
+        type: string
+      temperature:
+        type: number
+      top_p:
+        type: number
+    required:
+    - model_name
+    - question
+    type: object
+info:
+  contact: {}
+paths:
+  /v1/inference/qa:
+    post:
+      consumes:
+      - application/json
+      description: send a question
+      parameters:
+      - description: body of asking a question
+        in: body
+        name: param
+        required: true
+        schema:
+          $ref: '#/definitions/controller.qaRequest'
+      responses:
+        "201":
+          description: ""
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ResponseData'
+      summary: send a question
+      tags:
+      - QA
+swagger: "2.0"

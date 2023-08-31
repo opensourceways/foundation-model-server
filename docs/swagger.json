@@ -1,0 +1,92 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/v1/inference/qa": {
+            "post": {
+                "description": "send a question",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "QA"
+                ],
+                "summary": "send a question",
+                "parameters": [
+                    {
+                        "description": "body of asking a question",
+                        "name": "param",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controller.qaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/controller.ResponseData"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controller.ResponseData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "data": {},
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "controller.qaRequest": {
+            "type": "object",
+            "required": [
+                "model_name",
+                "question"
+            ],
+            "properties": {
+                "echo": {
+                    "type": "integer"
+                },
+                "max_new_tokens": {
+                    "type": "integer"
+                },
+                "model_name": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string"
+                },
+                "repetition_penalty": {
+                    "type": "number"
+                },
+                "stop": {
+                    "type": "string"
+                },
+                "stop_token_ids": {
+                    "type": "string"
+                },
+                "temperature": {
+                    "type": "number"
+                },
+                "top_p": {
+                    "type": "number"
+                }
+            }
+        }
+    }
+}
