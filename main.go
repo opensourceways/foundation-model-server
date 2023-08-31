@@ -71,5 +71,5 @@ func main() {
 	defer chatAdapter.Exit()
 
 	// run
-	server.StartWebServer(o.service.Port, o.service.GracePeriod, cfg)
+	server.StartWebServer(o.service.Port, o.service.GracePeriod, &cfg)
 }

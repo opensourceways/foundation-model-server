@@ -12,9 +12,9 @@ type askQuestionRequest struct {
 	Temperature       float32 `json:"temperature"`
 	RepetitionPenalty float32 `json:"repetition_penalty"`
 	Stop              string  `json:"stop"`
-	StopTokenIds      string  `json:"stop_token_ids"`
-	Echo              int     `json:"echo"`
+	StopTokenIds      []int   `json:"stop_token_ids"`
 	MaxNewTokens      int     `json:"max_new_tokens"`
+	Echo              bool    `json:"echo"`
 }
 
 func (req *askQuestionRequest) toCmd() (cmd app.CmdToAskQuestion, err error) {

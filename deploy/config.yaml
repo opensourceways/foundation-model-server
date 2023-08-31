@@ -1,0 +1,18 @@
+chat:
+  max_concurrent: 100
+  model:
+    max_length_of_question: 1000
+    chat_url: ""
+    list_models_url: ""
+    get_worker_address_url: ""
+    refresh_all_workers_url: ""
+
+middleware:
+  access_token: ""
+
+moderation:
+  endpoint: ""
+  access_key: ""
+  secret_key: ""
+  iam_endpoint: ""
+  region: ""

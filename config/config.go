@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+
 	"github.com/opensourceways/server-common-lib/utils"
 
 	"github.com/opensourceways/foundation-model-server/chat/infrastructure/chatadapter"
@@ -8,18 +10,22 @@ import (
 	"github.com/opensourceways/foundation-model-server/common/infrastructure/moderationadapter"
 )
 
-func LoadConfig(path string) (*Config, error) {
-	cfg := new(Config)
-	if err := utils.LoadFromYaml(path, cfg); err != nil {
-		return nil, err
+func LoadConfig(path string) (Config, error) {
+	cfg := Config{}
+
+	if err := utils.LoadFromYaml(path, &cfg); err != nil {
+		return cfg, err
+	}
+
+	if err := os.Remove(path); err != nil {
+		return cfg, err
 	}
 
 	cfg.SetDefault()
-	if err := cfg.Validate(); err != nil {
-		return nil, err
-	}
 
-	return cfg, nil
+	err := cfg.Validate()
+
+	return cfg, err
 }
 
 type configValidate interface {
@@ -42,17 +48,17 @@ func (cfg *chatConfig) SetDefault() {
 }
 
 type Config struct {
+	Chat       chatConfig               `json:"chat"`
 	Middleware middleware.Config        `json:"middleware"`
 	Moderation moderationadapter.Config `json:"moderation"`
-	Chat       chatConfig               `json:"chat"`
 }
 
 func (cfg *Config) configItems() []interface{} {
 	return []interface{}{
-		&cfg.Middleware,
-		&cfg.Moderation,
 		&cfg.Chat,
 		&cfg.Chat.Model,
+		&cfg.Middleware,
+		&cfg.Moderation,
 	}
 }
 
