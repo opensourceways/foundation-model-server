@@ -22,7 +22,7 @@ func NewQuestion(v string) (Question, error) {
 		return nil, errors.New("invalid question")
 	}
 
-	return nil, nil
+	return question(v), nil
 }
 
 type question string

@@ -23,7 +23,7 @@ func AddRouteForChatController(r *gin.RouterGroup, s app.ChatAppService) {
 	m := middleware.AccessTokenChecking()
 
 	r.POST("/v1/chat", m, ctl.Ask)
-	r.POST("/v1/chat/models", m, ctl.Models)
+	r.GET("/v1/chat/models", m, ctl.Models)
 }
 
 // Ask
