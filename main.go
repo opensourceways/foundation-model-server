@@ -61,14 +61,13 @@ func main() {
 		return
 	}
 
-	chatAdapter, err := chatadapter.Init(&cfg.Chat.Model)
-	if err != nil {
+	if err := chatadapter.Init(&cfg.Chat.Model); err != nil {
 		logrus.Errorf("init chat model failed, err:%s", err.Error())
 
 		return
 	}
 
-	defer chatAdapter.Exit()
+	defer chatadapter.Exit()
 
 	// run
 	server.StartWebServer(o.service.Port, o.service.GracePeriod, &cfg)
