@@ -1,0 +1,72 @@
+definitions:
+  controller.ResponseData:
+    properties:
+      code:
+        type: string
+      data: {}
+      msg:
+        type: string
+    type: object
+  controller.askQuestionRequest:
+    properties:
+      echo:
+        type: integer
+      max_new_tokens:
+        type: integer
+      model_name:
+        type: string
+      question:
+        type: string
+      repetition_penalty:
+        type: number
+      stop:
+        type: string
+      stop_token_ids:
+        type: string
+      temperature:
+        type: number
+      top_p:
+        type: number
+    required:
+    - model_name
+    - question
+    type: object
+info:
+  contact: {}
+paths:
+  /v1/chat:
+    post:
+      consumes:
+      - application/json
+      description: ask a question
+      parameters:
+      - description: body of asking a question
+        in: body
+        name: param
+        required: true
+        schema:
+          $ref: '#/definitions/controller.askQuestionRequest'
+      responses:
+        "201":
+          description: ""
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ResponseData'
+      summary: ask a question
+      tags:
+      - Chat
+  /v1/chat/models:
+    get:
+      consumes:
+      - application/json
+      description: list all models
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.ResponseData'
+      summary: list all models
+      tags:
+      - Chat
+swagger: "2.0"

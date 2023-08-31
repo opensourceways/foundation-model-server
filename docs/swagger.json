@@ -1,0 +1,112 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/v1/chat": {
+            "post": {
+                "description": "ask a question",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "ask a question",
+                "parameters": [
+                    {
+                        "description": "body of asking a question",
+                        "name": "param",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controller.askQuestionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/controller.ResponseData"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/chat/models": {
+            "get": {
+                "description": "list all models",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "list all models",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controller.ResponseData"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controller.ResponseData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "data": {},
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "controller.askQuestionRequest": {
+            "type": "object",
+            "required": [
+                "model_name",
+                "question"
+            ],
+            "properties": {
+                "echo": {
+                    "type": "integer"
+                },
+                "max_new_tokens": {
+                    "type": "integer"
+                },
+                "model_name": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string"
+                },
+                "repetition_penalty": {
+                    "type": "number"
+                },
+                "stop": {
+                    "type": "string"
+                },
+                "stop_token_ids": {
+                    "type": "string"
+                },
+                "temperature": {
+                    "type": "number"
+                },
+                "top_p": {
+                    "type": "number"
+                }
+            }
+        }
+    }
+}
