@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	port "github.com/opensourceways/foundation-model-server/chat/domain/chat"
 	"github.com/opensourceways/foundation-model-server/utils"
 )
@@ -65,7 +67,7 @@ func (impl *modelWatcher) watch() {
 
 		case <-timer.C:
 			if err := impl.refreshModels(); err != nil {
-				// TODO log it
+				logrus.Errorf("refesh models failed, err:%s", err.Error())
 			}
 
 			timer.Reset(interval)
