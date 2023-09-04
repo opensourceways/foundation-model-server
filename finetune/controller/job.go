@@ -75,13 +75,17 @@ func Init(n, k, t string) error {
 	if err != nil {
 		return err
 	}
+	defer os.Remove(kubeconfig)
+
 	clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {
 		return err
 	}
+
 	if tokens, err = readLinesFromFile(t); err != nil {
 		return err
 	}
+	defer os.Remove(t)
 
 	return nil
 }
