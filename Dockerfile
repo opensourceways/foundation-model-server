@@ -13,6 +13,6 @@ RUN groupadd -g 1000 fms
 RUN useradd -u 1000 -g fms -s /bin/bash -m fms
 USER fms
 WORKDIR /home/fms
-COPY --chown=fms --from=BUILDER /go/src/github.com/opensourceways/foundation-model-server/server /home/fms
+COPY --chown=fms --from=BUILDER /go/src/github.com/opensourceways/foundation-model-server/server/foundation-model-server /home/fms/server
 
 ENTRYPOINT ["/home/fms/server"]
