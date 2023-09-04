@@ -1,10 +1,36 @@
 definitions:
+  controller.JobInfo:
+    properties:
+      created_at:
+        type: string
+      dataset:
+        type: string
+      jobName:
+        type: string
+      model:
+        type: string
+      parameter:
+        additionalProperties:
+          type: string
+        type: object
+      secret:
+        type: string
+      status:
+        type: string
+      username:
+        type: string
+    type: object
   controller.ResponseData:
     properties:
       code:
         type: string
       data: {}
       msg:
+        type: string
+    type: object
+  controller.Secret:
+    properties:
+      secret:
         type: string
     type: object
   controller.askQuestionRequest:
@@ -50,7 +76,7 @@ paths:
           $ref: '#/definitions/controller.askQuestionRequest'
       responses:
         "201":
-          description: ""
+          description: Created
         "400":
           description: Bad Request
           schema:
@@ -71,4 +97,93 @@ paths:
       summary: list all models
       tags:
       - Chat
+  /v1/job:
+    get:
+      description: list jobs
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/controller.JobInfo'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: system_error
+      tags:
+      - Finetune
+    post:
+      consumes:
+      - application/json
+      description: create finetune
+      parameters:
+      - description: body of creating finetune
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.JobInfo'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controller.JobInfo'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: system_error
+      summary: Create
+      tags:
+      - Finetune
+  /v1/job/{jobname}:
+    delete:
+      consumes:
+      - application/json
+      description: delete finetune
+      parameters:
+      - description: finetune id
+        in: path
+        name: jobname
+        required: true
+        type: string
+      - description: secret
+        in: body
+        name: secret
+        required: true
+        schema:
+          $ref: '#/definitions/controller.Secret'
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            type: system_error
+      summary: Delete
+      tags:
+      - Finetune
+  /v1/log/{jobname}:
+    get:
+      consumes:
+      - application/json
+      description: watch single finetune
+      parameters:
+      - description: finetune id
+        in: path
+        name: jobname
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: system_error
+      summary: get a websocket to watch a finetune log
+      tags:
+      - Finetune
 swagger: "2.0"

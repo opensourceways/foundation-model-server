@@ -21,6 +21,7 @@ import (
 	"github.com/opensourceways/foundation-model-server/common/infrastructure/moderationadapter"
 	"github.com/opensourceways/foundation-model-server/config"
 	"github.com/opensourceways/foundation-model-server/docs"
+	finetunectl "github.com/opensourceways/foundation-model-server/finetune/controller"
 )
 
 func StartWebServer(port int, timeout time.Duration, cfg *config.Config) {
@@ -69,6 +70,7 @@ func setApiV1(v1 *gin.RouterGroup, cfg *config.Config) {
 	chatctl.AddRouteForChatController(
 		v1, chatapp.NewChatAppService(s),
 	)
+	finetunectl.RegisterRoutes(v1)
 }
 
 func logRequest() gin.HandlerFunc {

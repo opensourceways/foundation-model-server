@@ -10,6 +10,7 @@ import (
 
 	"github.com/opensourceways/foundation-model-server/chat/infrastructure/chatadapter"
 	"github.com/opensourceways/foundation-model-server/config"
+	finetune "github.com/opensourceways/foundation-model-server/finetune/controller"
 	"github.com/opensourceways/foundation-model-server/server"
 )
 
@@ -63,6 +64,12 @@ func main() {
 
 	if err := chatadapter.Init(&cfg.Chat.Model); err != nil {
 		logrus.Errorf("init chat model failed, err:%s", err.Error())
+
+		return
+	}
+
+	if err := finetune.Init(cfg.Finetune.Namespace, cfg.Finetune.Kubeconfig, cfg.Finetune.Tokens); err != nil {
+		logrus.Errorf("init finetune failed, err:%s", err.Error())
 
 		return
 	}

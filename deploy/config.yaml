@@ -16,3 +16,8 @@ moderation:
   secret_key: ""
   iam_endpoint: ""
   region: ""
+
+finetune:
+  kubeconfig: ""
+  namespace: ""
+  token_file: ""

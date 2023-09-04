@@ -41,6 +41,12 @@ type chatConfig struct {
 	Model         chatadapter.Config `json:"model"`
 }
 
+type finetuneConfig struct {
+	Kubeconfig string `json:"kubeconfig"`
+	Namespace  string `json:"namespace"`
+	Tokens     string `json:"token_file"`
+}
+
 func (cfg *chatConfig) SetDefault() {
 	if cfg.MaxConcurrent <= 0 {
 		cfg.MaxConcurrent = 100
@@ -51,6 +57,7 @@ type Config struct {
 	Chat       chatConfig               `json:"chat"`
 	Middleware middleware.Config        `json:"middleware"`
 	Moderation moderationadapter.Config `json:"moderation"`
+	Finetune   finetuneConfig           `json:"finetune"`
 }
 
 func (cfg *Config) configItems() []interface{} {
@@ -59,6 +66,7 @@ func (cfg *Config) configItems() []interface{} {
 		&cfg.Chat.Model,
 		&cfg.Middleware,
 		&cfg.Moderation,
+		&cfg.Finetune,
 	}
 }
 
