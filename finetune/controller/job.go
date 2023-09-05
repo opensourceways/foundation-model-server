@@ -216,6 +216,7 @@ func createJob(c *gin.Context) {
 	log.Printf("username: %s dataset: %s model: %s parameter: %v", jobInfo.Username, jobInfo.Dataset, jobInfo.Model, jobInfo.Parameter)
 
 	jobInfo.Parameter["secret"] = jobInfo.Secret
+	jobInfo.Parameter["model_name"] = jobInfo.Model
 	// 创建作业对象
 	job, err := doCreateJob(clientset, jobInfo.Username, jobInfo.Dataset, jobInfo.Model, &jobInfo.Parameter, 120)
 	if err != nil {
@@ -383,7 +384,7 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 					Containers: []corev1.Container{
 						{
 							Name:    jobName,
-							Image:   "ubuntu-20.04-vicuna:v4",
+							Image:   "ubuntu-20.04-vicuna:v7",
 							Command: []string{"/bin/bash", "-i", "/root/run_finetune.sh"},
 							VolumeMounts: []corev1.VolumeMount{
 								corev1.VolumeMount{
@@ -455,18 +456,14 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 		if time.Now().After(timeoutTime) {
 			// 删除 Job 和 Pod
 			deletePolicy := metav1.DeletePropagationForeground
-			if err := clientset.BatchV1().Jobs(namespace).Delete(context.TODO(), jobName, metav1.DeleteOptions{
+			clientset.BatchV1().Jobs(namespace).Delete(context.TODO(), jobName, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
-			}); err != nil {
-				return nil, fmt.Errorf("create job timeout")
-			}
+			})
 
 			for _, pod := range pods.Items {
-				if err := clientset.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{
+				clientset.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{
 					PropagationPolicy: &deletePolicy,
-				}); err != nil {
-					return nil, fmt.Errorf("failed to delete Pod: %v", err)
-				}
+				})
 			}
 
 			return nil, fmt.Errorf("timeout waiting for job running")
