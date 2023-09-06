@@ -221,7 +221,7 @@ func createJob(c *gin.Context) {
 	jobInfo.Parameter["secret"] = c.GetHeader(headerSecret)
 	jobInfo.Parameter["model_name"] = jobInfo.Model
 	jobInfo.Parameter["dataset"] = jobInfo.Dataset
-	jobInfo.Parameter["num_number"] = "4"
+	jobInfo.Parameter["npu_number"] = "4"
 
 	// 创建作业对象
 	job, err := doCreateJob(clientset, jobInfo.Username, jobInfo.Dataset, jobInfo.Model, &jobInfo.Parameter, 120)
