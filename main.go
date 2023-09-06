@@ -68,7 +68,7 @@ func main() {
 		return
 	}
 
-	if err := finetune.Init(cfg.Finetune.Namespace, cfg.Finetune.Kubeconfig, cfg.Finetune.Tokens); err != nil {
+	if err := finetune.Init(cfg.Finetune.Namespace, cfg.Finetune.Kubeconfig, cfg.Finetune.Image, cfg.Finetune.Tokens); err != nil {
 		logrus.Errorf("init finetune failed, err:%s", err.Error())
 
 		return

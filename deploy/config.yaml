@@ -1,7 +1,7 @@
 chat:
   max_concurrent: 100
   model:
-    max_length_of_question: 1000
+    max_length_of_question: 10000
     chat_url: ""
     list_models_url: ""
     get_worker_address_url: ""
@@ -21,3 +21,4 @@ finetune:
   kubeconfig: ""
   namespace: ""
   token_file: ""
+  image: ""

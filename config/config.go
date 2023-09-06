@@ -45,6 +45,7 @@ type finetuneConfig struct {
 	Kubeconfig string `json:"kubeconfig"`
 	Namespace  string `json:"namespace"`
 	Tokens     string `json:"token_file"`
+	Image      string `json:"image"`
 }
 
 func (cfg *chatConfig) SetDefault() {
