@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 
 	"github.com/opensourceways/foundation-model-server/allerror"
 	commonstl "github.com/opensourceways/foundation-model-server/common/controller"
@@ -45,10 +46,12 @@ func (m *accessTokenChecking) check(ctx *gin.Context) {
 func (m *accessTokenChecking) doCheck(ctx *gin.Context) error {
 	t := m.token(ctx)
 	if t == "" {
+		logrus.Error("empty token forbidden")
 		return allerror.New(allerror.ErrorCodeAccessTokenMissing, "")
 	}
 
 	if t != m.accessToken {
+		logrus.Error("invalid token forbidden")
 		return allerror.New(allerror.ErrorCodeAccessTokenInvalid, "")
 	}
 

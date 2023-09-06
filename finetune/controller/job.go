@@ -13,6 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket" // swagger embed files
+	"github.com/opensourceways/foundation-model-server/common/controller/middleware"
+	"github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -23,10 +25,13 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const headerSecret = "FINETUNE-SECRET"
+
 var (
 	kubeconfig string
 	namespace  string
 	tokens     []string
+	image      string
 	clientset  *kubernetes.Clientset
 )
 
@@ -38,11 +43,6 @@ type JobInfo struct {
 	CreatedAt string            `json:"created_at,omitempty"`
 	Status    string            `json:"status,omitempty"`
 	Parameter map[string]string `json:"parameter"`
-	Secret    string            `json:"secret"`
-}
-
-type Secret struct {
-	Secret string `json:"secret"`
 }
 
 func readLinesFromFile(filename string) ([]string, error) {
@@ -66,9 +66,10 @@ func readLinesFromFile(filename string) ([]string, error) {
 	return lines, nil
 }
 
-func Init(n, k, t string) error {
+func Init(n, k, i, t string) error {
 	kubeconfig = k
 	namespace = n
+	image = i
 
 	// 创建 Kubernetes 客户端
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
@@ -92,16 +93,15 @@ func Init(n, k, t string) error {
 
 // 注册路由
 func RegisterRoutes(router *gin.RouterGroup) {
-
+	m := middleware.AccessTokenChecking()
 	// 创建作业
-	router.POST("/v1/job", createJob)
-
+	router.POST("/v1/job", m, createJob)
 	// 删除作业
-	router.DELETE("/v1/job/:jobname", deleteJob)
+	router.DELETE("/v1/job/:jobname", m, deleteJob)
 
-	router.GET("/v1/log/:jobname", getJobLogs)
+	router.GET("/v1/log/:jobname", m, getJobLogs)
 	// 获取所有作业
-	router.GET("/v1/job", listJobs)
+	router.GET("/v1/job", m, listJobs)
 }
 
 //	@Title			List
@@ -115,6 +115,7 @@ func listJobs(c *gin.Context) {
 	jobList, err := clientset.BatchV1().Jobs(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		logrus.Error(err.Error())
 		return
 	}
 
@@ -137,6 +138,7 @@ func listJobs(c *gin.Context) {
 		params, err := getEnvs(&job, true)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+			logrus.Error(err.Error())
 			return
 		}
 
@@ -165,6 +167,7 @@ func getJobStatus(c *gin.Context) {
 	job, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		logrus.Error(err.Error())
 		return
 	}
 
@@ -210,23 +213,28 @@ func createJob(c *gin.Context) {
 	// 解析JSON请求体
 	if err := c.ShouldBindJSON(&jobInfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse JSON data " + err.Error()})
-		log.Println(err.Error())
+		logrus.Error(err.Error())
 		return
 	}
-	log.Printf("username: %s dataset: %s model: %s parameter: %v", jobInfo.Username, jobInfo.Dataset, jobInfo.Model, jobInfo.Parameter)
+	logrus.Info("username: %s dataset: %s model: %s parameter: %v", jobInfo.Username, jobInfo.Dataset, jobInfo.Model, jobInfo.Parameter)
 
-	jobInfo.Parameter["secret"] = jobInfo.Secret
+	jobInfo.Parameter["secret"] = c.GetHeader(headerSecret)
 	jobInfo.Parameter["model_name"] = jobInfo.Model
+	jobInfo.Parameter["dataset"] = jobInfo.Dataset
+	jobInfo.Parameter["num_number"] = "4"
+
 	// 创建作业对象
 	job, err := doCreateJob(clientset, jobInfo.Username, jobInfo.Dataset, jobInfo.Model, &jobInfo.Parameter, 120)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		logrus.Error(err.Error())
 		return
 	}
 
 	params, err := getEnvs(job, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		logrus.Error(err.Error())
 		return
 	}
 
@@ -262,12 +270,14 @@ func getJobLogs(c *gin.Context) {
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		logrus.Error(err.Error())
 		return
 	}
 
 	defer ws.Close()
 	if err := doWatchJob(ws, clientset, namespace, jobName); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		logrus.Error(err.Error())
 	}
 }
 
@@ -316,7 +326,6 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 //	@Description	delete finetune
 //	@Tags			Finetune
 //	@Param			jobname	path	string	true	"finetune id"
-//  @Param			secret  body    Secret  true    "secret"
 //	@Accept			json
 //	@Success		200
 //	@Failure		500	system_error	system	error
@@ -324,24 +333,19 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 func deleteJob(c *gin.Context) {
 	// 从路径参数中获取作业名称
 	jobname := c.Param("jobname")
-	var secret Secret
+	secret := c.GetHeader(headerSecret)
 
-	// 解析JSON请求体
-	if err := c.ShouldBindJSON(&secret); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse JSON data " + err.Error()})
-		log.Println(err.Error())
-		return
-	}
-
-	err := checkDeletePerm(clientset, jobname, namespace, secret.Secret)
+	err := checkDeletePerm(clientset, jobname, namespace, secret)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"msg": err.Error()})
+		logrus.Error(err.Error())
 		return
 	}
 
 	err = doDeleteJob(clientset, jobname, namespace)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		logrus.Error(err.Error())
 		return
 	}
 
@@ -384,12 +388,16 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 					Containers: []corev1.Container{
 						{
 							Name:    jobName,
-							Image:   "ubuntu-20.04-vicuna:v7",
+							Image:   image,
 							Command: []string{"/bin/bash", "-i", "/root/run_finetune.sh"},
 							VolumeMounts: []corev1.VolumeMount{
 								corev1.VolumeMount{
 									Name:      "model",
 									MountPath: "/opt/" + model,
+								},
+								corev1.VolumeMount{
+									Name:      "dataset",
+									MountPath: "/opt/" + dataset + ".json",
 								},
 							},
 							Resources: corev1.ResourceRequirements{
@@ -410,6 +418,15 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/data/disk1/model/" + model,
 									Type: (*corev1.HostPathType)(pointer.String(string(corev1.HostPathDirectory))),
+								},
+							},
+						},
+						{
+							Name: "dataset",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/data/disk1/dataset/" + dataset + ".json",
+									Type: (*corev1.HostPathType)(pointer.String(string(corev1.HostPathFile))),
 								},
 							},
 						},
@@ -486,7 +503,7 @@ func checkDeletePerm(clientset *kubernetes.Clientset, jobName, namespace, secret
 	}
 	// check secret
 	if s, ok := params["secret"]; ok && s != secret {
-		return fmt.Errorf("Permission deny, can't delete it")
+		return fmt.Errorf("Permission deny, you can't delete the job created by other")
 	}
 	return nil
 }
