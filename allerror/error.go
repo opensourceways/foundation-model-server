@@ -1,18 +1,43 @@
 package allerror
 
-import "strings"
-
 const (
-	ErrorCodeAccessTokenMissing = "access_token_missing"
-	ErrorCodeAccessTokenInvalid = "access_token_invalid"
-
-	ErrorCodeSensitiveContent = "sensitive_content"
-	ErrorCodeTooManyRequest   = "too_many_request"
+	ErrorCodeAccessTokenMissing = iota + 10000
+	ErrorCodeAccessTokenInvalid
+	ErrorCodeSensitiveContent
+	ErrorCodeTooManyRequest
+	ErrorCodeReqTimeout
+	ErrorNotFound
+	ErrorNotAllow
+	ErrorInternalError
+	ErrorFinetune
+	ErrorBadRequest
+	ErrorBadRequestParam
+	ErrorBadRequestBody
+	ErrorPermissionDeny
+	ErrorSystemError
 )
+
+var errTable = map[int]string{
+	ErrorCodeAccessTokenMissing: "access token missing",
+	ErrorCodeAccessTokenInvalid: "access token invalid",
+	ErrorCodeSensitiveContent:   "sensitive content",
+	ErrorCodeTooManyRequest:     "too many requests",
+	ErrorCodeReqTimeout:         "request timeout",
+	ErrorNotFound:               "page not found",
+	ErrorNotAllow:               "method not allowed",
+	ErrorInternalError:          "internal error",
+	ErrorFinetune:               "finetune error",
+	ErrorBadRequest:             "bad_request",
+
+	ErrorSystemError:     "system_error",
+	ErrorBadRequestBody:  "bad_request_body",
+	ErrorBadRequestParam: "bad_request_param",
+	ErrorPermissionDeny:  "permission denied",
+}
 
 // errorImpl
 type errorImpl struct {
-	code string
+	code int
 	msg  string
 }
 
@@ -20,18 +45,18 @@ func (e errorImpl) Error() string {
 	return e.msg
 }
 
-func (e errorImpl) ErrorCode() string {
+func (e errorImpl) ErrorCode() int {
 	return e.code
 }
 
 // New
-func New(code string, msg string) errorImpl {
+func New(code int, msg string) errorImpl {
 	v := errorImpl{
 		code: code,
 	}
 
 	if msg == "" {
-		v.msg = strings.ReplaceAll(code, "_", " ")
+		v.msg = errTable[code]
 	} else {
 		v.msg = msg
 	}
@@ -47,6 +72,6 @@ type notfoudError struct {
 func (e notfoudError) NotFound() {}
 
 // NewNotFound
-func NewNotFound(code string, msg string) notfoudError {
-	return notfoudError{New(code, msg)}
+func NewNotFound(msg string) notfoudError {
+	return notfoudError{New(ErrorNotFound, msg)}
 }

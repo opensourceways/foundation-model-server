@@ -6,22 +6,23 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/opensourceways/server-common-lib/interrupts"
-	"github.com/sirupsen/logrus"
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-
+	"github.com/opensourceways/foundation-model-server/allerror"
 	chatapp "github.com/opensourceways/foundation-model-server/chat/app"
 	chatctl "github.com/opensourceways/foundation-model-server/chat/controller"
 	"github.com/opensourceways/foundation-model-server/chat/domain/dp"
 	chatservice "github.com/opensourceways/foundation-model-server/chat/domain/service"
 	"github.com/opensourceways/foundation-model-server/chat/infrastructure/chatadapter"
+	commonctl "github.com/opensourceways/foundation-model-server/common/controller"
 	"github.com/opensourceways/foundation-model-server/common/controller/middleware"
 	"github.com/opensourceways/foundation-model-server/common/infrastructure/flowcontrolleradapter"
 	"github.com/opensourceways/foundation-model-server/common/infrastructure/moderationadapter"
 	"github.com/opensourceways/foundation-model-server/config"
 	"github.com/opensourceways/foundation-model-server/docs"
 	finetunectl "github.com/opensourceways/foundation-model-server/finetune/controller"
+	"github.com/opensourceways/server-common-lib/interrupts"
+	"github.com/sirupsen/logrus"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func StartWebServer(port int, timeout time.Duration, cfg *config.Config) {
@@ -30,6 +31,14 @@ func StartWebServer(port int, timeout time.Duration, cfg *config.Config) {
 	r.Use(logRequest())
 
 	setRouter(r, cfg)
+
+	r.NoRoute(func(c *gin.Context) {
+		commonctl.SendFailedResp(c, allerror.New(allerror.ErrorNotFound, ""))
+	})
+
+	r.NoMethod(func(c *gin.Context) {
+		commonctl.SendFailedResp(c, allerror.New(allerror.ErrorNotAllow, ""))
+	})
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),

@@ -1,17 +1,19 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opensourceways/foundation-model-server/allerror"
 )
 
 func SendBadRequestBody(ctx *gin.Context, err error) {
-	ctx.JSON(http.StatusBadRequest, newResponseCodeError(errorBadRequestBody, err))
+	ctx.JSON(http.StatusBadRequest, newResponseCodeError(fmt.Sprint(allerror.ErrorBadRequestBody), err))
 }
 
 func SendBadRequestParam(ctx *gin.Context, err error) {
-	ctx.JSON(http.StatusBadRequest, newResponseCodeError(errorBadRequestParam, err))
+	ctx.JSON(http.StatusBadRequest, newResponseCodeError(fmt.Sprint(allerror.ErrorBadRequestParam), err))
 }
 
 // Post

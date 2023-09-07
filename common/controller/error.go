@@ -1,20 +1,14 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/opensourceways/foundation-model-server/allerror"
 )
 
-const (
-	errorBadRequest      = "bad_request"
-	errorSystemError     = "system_error"
-	errorBadRequestBody  = "bad_request_body"
-	errorBadRequestParam = "bad_request_param"
-)
-
 type errorCode interface {
-	ErrorCode() string
+	ErrorCode() int
 }
 
 type errorNotFound interface {
@@ -23,29 +17,33 @@ type errorNotFound interface {
 	NotFound()
 }
 
+var errTable = map[int]int{
+	allerror.ErrorCodeAccessTokenMissing: http.StatusUnauthorized,
+	allerror.ErrorCodeAccessTokenInvalid: http.StatusUnauthorized,
+	allerror.ErrorCodeSensitiveContent:   http.StatusBadRequest,
+	allerror.ErrorCodeTooManyRequest:     http.StatusTooManyRequests,
+	allerror.ErrorCodeReqTimeout:         http.StatusRequestTimeout,
+	allerror.ErrorNotFound:               http.StatusNotFound,
+	allerror.ErrorInternalError:          http.StatusInternalServerError,
+}
+
 func httpError(err error) (int, string) {
 	if err == nil {
-		return http.StatusOK, ""
+		return http.StatusOK, "0"
 	}
 
 	sc := http.StatusInternalServerError
-	code := errorSystemError
+	code := allerror.ErrorInternalError
 
 	if v, ok := err.(errorCode); ok {
 		code = v.ErrorCode()
 
-		if _, ok := err.(errorNotFound); ok {
-			sc = http.StatusNotFound
+		if status, ok := errTable[code]; ok {
+			sc = status
 		} else {
-			switch code {
-			case allerror.ErrorCodeAccessTokenInvalid:
-				sc = http.StatusUnauthorized
-
-			default:
-				sc = http.StatusBadRequest
-			}
+			sc = http.StatusBadRequest
 		}
 	}
 
-	return sc, code
+	return sc, fmt.Sprint(code)
 }
