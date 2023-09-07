@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -13,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket" // swagger embed files
+	"github.com/opensourceways/foundation-model-server/allerror"
+	commonctl "github.com/opensourceways/foundation-model-server/common/controller"
 	"github.com/opensourceways/foundation-model-server/common/controller/middleware"
 	"github.com/sirupsen/logrus"
 	batchv1 "k8s.io/api/batch/v1"
@@ -114,7 +115,7 @@ func listJobs(c *gin.Context) {
 	// 使用 clientset 进行操作
 	jobList, err := clientset.BatchV1().Jobs(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		commonctl.SendFailedResp(c, err)
 		logrus.Error(err.Error())
 		return
 	}
@@ -137,7 +138,7 @@ func listJobs(c *gin.Context) {
 
 		params, err := getEnvs(&job, true)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+			commonctl.SendFailedResp(c, err)
 			logrus.Error(err.Error())
 			return
 		}
@@ -212,11 +213,11 @@ func createJob(c *gin.Context) {
 
 	// 解析JSON请求体
 	if err := c.ShouldBindJSON(&jobInfo); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse JSON data " + err.Error()})
+		commonctl.SendBadRequestBody(c, err)
 		logrus.Error(err.Error())
 		return
 	}
-	logrus.Info("username: %s dataset: %s model: %s parameter: %v", jobInfo.Username, jobInfo.Dataset, jobInfo.Model, jobInfo.Parameter)
+	logrus.Infof("username: %s dataset: %s model: %s parameter: %v", jobInfo.Username, jobInfo.Dataset, jobInfo.Model, jobInfo.Parameter)
 
 	jobInfo.Parameter["secret"] = c.GetHeader(headerSecret)
 	jobInfo.Parameter["model_name"] = jobInfo.Model
@@ -226,14 +227,14 @@ func createJob(c *gin.Context) {
 	// 创建作业对象
 	job, err := doCreateJob(clientset, jobInfo.Username, jobInfo.Dataset, jobInfo.Model, &jobInfo.Parameter, 120)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		commonctl.SendFailedResp(c, err)
 		logrus.Error(err.Error())
 		return
 	}
 
 	params, err := getEnvs(job, true)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		commonctl.SendFailedResp(c, err)
 		logrus.Error(err.Error())
 		return
 	}
@@ -269,14 +270,14 @@ func getJobLogs(c *gin.Context) {
 
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		commonctl.SendFailedResp(c, err)
 		logrus.Error(err.Error())
 		return
 	}
 
 	defer ws.Close()
 	if err := doWatchJob(ws, clientset, namespace, jobName); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		commonctl.SendFailedResp(c, err)
 		logrus.Error(err.Error())
 	}
 }
@@ -307,12 +308,10 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 		for {
 			n, err := podLogs.Read(buf)
 			if err != nil {
-				log.Println(err.Error())
 				break
 			}
 			if n > 0 {
 				if err := ws.WriteMessage(websocket.TextMessage, buf[:n]); err != nil {
-					log.Println("Failed to write WebSocket message:", err)
 					break
 				}
 			}
@@ -337,21 +336,21 @@ func deleteJob(c *gin.Context) {
 
 	err := checkDeletePerm(clientset, jobname, namespace, secret)
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"msg": err.Error()})
+		commonctl.SendFailedResp(c, err)
 		logrus.Error(err.Error())
 		return
 	}
 
 	err = doDeleteJob(clientset, jobname, namespace)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		commonctl.SendFailedResp(c, err)
 		logrus.Error(err.Error())
 		return
 	}
 
 	// 返回删除成功的响应
 	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("Job %s deleted", jobname),
+		"msg": fmt.Sprintf("Job %s deleted", jobname),
 	})
 }
 
@@ -483,7 +482,7 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 				})
 			}
 
-			return nil, fmt.Errorf("timeout waiting for job running")
+			return nil, allerror.New(allerror.ErrorCodeReqTimeout, "timeout waiting for job running")
 		}
 		// 等待一段时间后重新检查
 		time.Sleep(5 * time.Second)
@@ -491,6 +490,9 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 }
 
 func checkDeletePerm(clientset *kubernetes.Clientset, jobName, namespace, secret string) error {
+	if secret == "" {
+		return allerror.New(allerror.ErrorPermissionDeny, "Permission deny, empty secret")
+	}
 	// 删除job
 	job, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 	if err != nil {
@@ -503,7 +505,7 @@ func checkDeletePerm(clientset *kubernetes.Clientset, jobName, namespace, secret
 	}
 	// check secret
 	if s, ok := params["secret"]; ok && s != secret {
-		return fmt.Errorf("Permission deny, you can't delete the job created by other")
+		return allerror.New(allerror.ErrorPermissionDeny, "Permission deny, you can't delete the job created by other")
 	}
 	return nil
 }
@@ -520,7 +522,6 @@ func doDeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) err
 		LabelSelector: "job-name=" + jobName,
 	})
 	if err != nil {
-		log.Println("Failed to list Pods:", err)
 		return err
 	}
 
@@ -528,7 +529,6 @@ func doDeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) err
 	for _, pod := range podList.Items {
 		err = clientset.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 		if err != nil {
-			log.Println("Failed to delete Pod:", err)
 			return err
 		}
 		pods = append(pods, pod.Name)
@@ -538,7 +538,6 @@ func doDeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) err
 		_, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 		if err != nil {
 			if isNotFound(err) {
-				log.Println("Job deleted")
 				break
 			} else {
 				return err
@@ -556,7 +555,6 @@ func doDeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) err
 				if isNotFound(err) {
 					podDeleted = true
 				} else {
-					log.Println("Failed to get Pod:", err)
 					break
 				}
 			}
