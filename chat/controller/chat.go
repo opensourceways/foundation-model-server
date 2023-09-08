@@ -44,7 +44,7 @@ func (ctl ChatController) Ask(ctx *gin.Context) {
 		return
 	}
 
-	cmd, err := req.toCmd()
+	cmd, err := req.toCmd(ctx.Request.Context())
 	if err != nil {
 		commonctl.SendBadRequestParam(ctx, err)
 

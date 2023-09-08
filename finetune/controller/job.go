@@ -491,7 +491,7 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 
 func checkDeletePerm(clientset *kubernetes.Clientset, jobName, namespace, secret string) error {
 	if secret == "" {
-		return allerror.New(allerror.ErrorPermissionDeny, "Permission deny, empty secret")
+		return allerror.New(allerror.ErrorPermissionDeny, "Permission denied, empty secret")
 	}
 	// 删除job
 	job, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
@@ -505,7 +505,7 @@ func checkDeletePerm(clientset *kubernetes.Clientset, jobName, namespace, secret
 	}
 	// check secret
 	if s, ok := params["secret"]; ok && s != secret {
-		return allerror.New(allerror.ErrorPermissionDeny, "Permission deny, you can't delete the job created by other")
+		return allerror.New(allerror.ErrorPermissionDeny, "Permission denied, you can't delete jobs created by others")
 	}
 	return nil
 }

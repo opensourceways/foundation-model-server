@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"context"
 	"io"
 
 	"github.com/opensourceways/foundation-model-server/chat/domain/dp"
@@ -10,6 +11,7 @@ type Question struct {
 	Question   dp.Question
 	Parameter  QuestionParameter
 	ModelName  dp.ModelName
+	Ctx        context.Context
 	SteamWrite func(doOnce func(io.Writer) (bool, error))
 }
 
