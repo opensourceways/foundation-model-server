@@ -38,12 +38,12 @@ var (
 
 type JobInfo struct {
 	JobName   string            `json:"jobName,omitempty"`
-	Username  string            `json:"username"`
-	Dataset   string            `json:"dataset"`
-	Model     string            `json:"model"`
+	Username  string            `json:"username" required:"true"`
+	Dataset   string            `json:"dataset" required:"true"`
+	Model     string            `json:"model" required:"true"`
 	CreatedAt string            `json:"created_at,omitempty"`
 	Status    string            `json:"status,omitempty"`
-	Parameter map[string]string `json:"parameter"`
+	Parameter map[string]string `json:"parameter" required:"true"`
 }
 
 func readLinesFromFile(filename string) ([]string, error) {
@@ -217,6 +217,14 @@ func createJob(c *gin.Context) {
 		logrus.Error(err.Error())
 		return
 	}
+
+	if jobInfo.Username == " " || jobInfo.Dataset == "" || jobInfo.Model == "" || jobInfo.Parameter == nil {
+		err := fmt.Errorf("invalid params")
+		logrus.Error(err)
+		commonctl.SendBadRequestBody(c, err)
+		return
+	}
+
 	logrus.Infof("username: %s dataset: %s model: %s parameter: %v", jobInfo.Username, jobInfo.Dataset, jobInfo.Model, jobInfo.Parameter)
 
 	jobInfo.Parameter["secret"] = c.GetHeader(headerSecret)
@@ -290,6 +298,8 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 		LabelSelector: "job-name=" + jobName,
 	})
 	if err != nil {
+		logrus.Error(err.Error())
+		err = fmt.Errorf("get job failed")
 		return err
 	}
 
@@ -299,6 +309,8 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 		})
 		podLogs, err := req.Stream(ctx)
 		if err != nil {
+			logrus.Error(err.Error())
+			err = fmt.Errorf("get job logs failed")
 			return err
 		}
 		defer podLogs.Close()
@@ -438,6 +450,8 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 
 	jobObj, err = clientset.BatchV1().Jobs(namespace).Create(context.TODO(), job, metav1.CreateOptions{})
 	if err != nil {
+		logrus.Error(err.Error())
+		err = fmt.Errorf("create job failed")
 		return
 	}
 
@@ -450,7 +464,9 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 			LabelSelector: fmt.Sprintf("job-name=%s", jobName),
 		})
 		if err != nil {
-			return
+			// 等待一段时间后重新检查
+			time.Sleep(5 * time.Second)
+			continue
 		}
 
 		if len(pods.Items) > 0 {
@@ -496,11 +512,15 @@ func checkDeletePerm(clientset *kubernetes.Clientset, jobName, namespace, secret
 	// 删除job
 	job, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 	if err != nil {
+		logrus.Error(err.Error())
+		err = fmt.Errorf("get job info failed")
 		return err
 	}
 
 	params, err := getEnvs(job, false)
 	if err != nil {
+		logrus.Error(err.Error())
+		err = fmt.Errorf("get job info failed")
 		return err
 	}
 	// check secret
@@ -514,6 +534,8 @@ func doDeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) err
 	// 删除job
 	err := clientset.BatchV1().Jobs(namespace).Delete(context.TODO(), jobName, metav1.DeleteOptions{})
 	if err != nil {
+		logrus.Error(err.Error())
+		err = fmt.Errorf("delete job failed")
 		return err
 	}
 
@@ -522,6 +544,8 @@ func doDeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) err
 		LabelSelector: "job-name=" + jobName,
 	})
 	if err != nil {
+		logrus.Error(err.Error())
+		err = fmt.Errorf("get job info failed")
 		return err
 	}
 
@@ -529,6 +553,8 @@ func doDeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) err
 	for _, pod := range podList.Items {
 		err = clientset.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 		if err != nil {
+			logrus.Error(err.Error())
+			err = fmt.Errorf("delete job failed")
 			return err
 		}
 		pods = append(pods, pod.Name)
@@ -540,6 +566,8 @@ func doDeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) err
 			if isNotFound(err) {
 				break
 			} else {
+				logrus.Error(err.Error())
+				err = fmt.Errorf("create job failed")
 				return err
 			}
 		}
