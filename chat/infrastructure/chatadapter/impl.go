@@ -65,7 +65,7 @@ func (impl *chatAdapter) Ask(q *port.Question) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, impl.cfg.ChatURL, buf)
+	req, err := http.NewRequestWithContext(q.Ctx, http.MethodPost, impl.cfg.ChatURL, buf)
 	if err != nil {
 		return err
 	}

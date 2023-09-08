@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-contrib/timeout"
 	"github.com/gin-gonic/gin"
 	"github.com/opensourceways/foundation-model-server/allerror"
 	chatapp "github.com/opensourceways/foundation-model-server/chat/app"
@@ -27,6 +28,7 @@ import (
 
 func StartWebServer(port int, timeout time.Duration, cfg *config.Config) {
 	r := gin.New()
+	r.Use(timeoutMiddleware(cfg.Middleware.Timeout))
 	r.Use(gin.Recovery())
 	r.Use(logRequest())
 
@@ -80,6 +82,24 @@ func setApiV1(v1 *gin.RouterGroup, cfg *config.Config) {
 		v1, chatapp.NewChatAppService(s),
 	)
 	finetunectl.RegisterRoutes(v1)
+}
+
+func timeoutResponse(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusRequestTimeout, gin.H{
+		"code": fmt.Sprint(allerror.ErrorCodeReqTimeout),
+		"msg":  http.StatusRequestTimeout,
+	})
+}
+
+// RequestTimeout 处理请求超时
+func timeoutMiddleware(t int) gin.HandlerFunc {
+	return timeout.New(
+		timeout.WithTimeout(time.Duration(t)*time.Second),
+		timeout.WithHandler(func(c *gin.Context) {
+			c.Next()
+		}),
+		timeout.WithResponse(timeoutResponse),
+	)
 }
 
 func logRequest() gin.HandlerFunc {

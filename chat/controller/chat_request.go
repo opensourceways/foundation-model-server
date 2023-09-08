@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"context"
+
 	"github.com/opensourceways/foundation-model-server/chat/app"
 	"github.com/opensourceways/foundation-model-server/chat/domain/dp"
 )
@@ -17,7 +19,7 @@ type askQuestionRequest struct {
 	Echo              bool    `json:"echo"`
 }
 
-func (req *askQuestionRequest) toCmd() (cmd app.CmdToAskQuestion, err error) {
+func (req *askQuestionRequest) toCmd(c context.Context) (cmd app.CmdToAskQuestion, err error) {
 	if cmd.Question, err = dp.NewQuestion(req.Question); err != nil {
 		return
 	}
@@ -37,6 +39,8 @@ func (req *askQuestionRequest) toCmd() (cmd app.CmdToAskQuestion, err error) {
 
 	p.Echo = req.Echo
 	p.MaxNewTokens = req.MaxNewTokens
+
+	cmd.Ctx = c
 
 	return
 }

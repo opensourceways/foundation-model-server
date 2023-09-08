@@ -9,6 +9,7 @@ chat:
 
 middleware:
   access_token: ""
+  timeout: 60
 
 moderation:
   endpoint: ""

@@ -21,6 +21,7 @@ func Init(cfg *Config) {
 // Config
 type Config struct {
 	AccessToken string `json:"access_token" required:"true"`
+	Timeout     int    `json:"timeout" required:"true"`
 }
 
 // AccessTokenChecking
