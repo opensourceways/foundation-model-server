@@ -3,7 +3,6 @@ module github.com/opensourceways/foundation-model-server
 go 1.18
 
 require (
-	github.com/gin-contrib/timeout v0.0.3
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
@@ -13,6 +12,7 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.1
+	github.com/vearne/gin-timeout v0.1.7
 	k8s.io/api v0.28.1
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
