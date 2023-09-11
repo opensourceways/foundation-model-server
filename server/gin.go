@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-contrib/timeout"
 	"github.com/gin-gonic/gin"
 	"github.com/opensourceways/foundation-model-server/allerror"
 	chatapp "github.com/opensourceways/foundation-model-server/chat/app"
@@ -24,13 +23,15 @@ import (
 	"github.com/sirupsen/logrus"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	timeout "github.com/vearne/gin-timeout"
 )
 
 func StartWebServer(port int, timeout time.Duration, cfg *config.Config) {
 	r := gin.New()
-	r.Use(timeoutMiddleware(cfg.Middleware.Timeout))
 	r.Use(gin.Recovery())
 	r.Use(logRequest())
+	// this middleware cause reponse non-stream
+	//r.Use(timeoutMiddleware(cfg.Middleware.Timeout))
 
 	setRouter(r, cfg)
 
@@ -93,12 +94,11 @@ func timeoutResponse(c *gin.Context) {
 
 // RequestTimeout 处理请求超时
 func timeoutMiddleware(t int) gin.HandlerFunc {
-	return timeout.New(
+	defaultMsg := `{"code": 10004, "msg":"request timeout"}`
+	return timeout.Timeout(
 		timeout.WithTimeout(time.Duration(t)*time.Second),
-		timeout.WithHandler(func(c *gin.Context) {
-			c.Next()
-		}),
-		timeout.WithResponse(timeoutResponse),
+		timeout.WithErrorHttpCode(http.StatusRequestTimeout),
+		timeout.WithDefaultMsg(defaultMsg),
 	)
 }
 
