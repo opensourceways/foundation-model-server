@@ -105,12 +105,12 @@ func RegisterRoutes(router *gin.RouterGroup) {
 	router.GET("/v1/job", m, listJobs)
 }
 
-//	@Title			List
-//	@Description	list jobs
-//	@Tags			Finetune
-//	@Success		200	{object}		[]JobInfo
-//	@Failure		500	system_error	system	error
-//	@Router			/v1/job [get]
+// @Title			List
+// @Description	list jobs
+// @Tags			Finetune
+// @Success		200	{object}		[]JobInfo
+// @Failure		500	system_error	system	error
+// @Router			/v1/job [get]
 func listJobs(c *gin.Context) {
 	// 使用 clientset 进行操作
 	jobList, err := clientset.BatchV1().Jobs(namespace).List(context.TODO(), metav1.ListOptions{})
@@ -199,14 +199,14 @@ func getEnvs(job *batchv1.Job, skipSecret bool) (envs map[string]string, err err
 	return
 }
 
-//	@Summary		Create
-//	@Description	create finetune
-//	@Tags			Finetune
-//	@Param			body	body	JobInfo	true	"body of creating finetune"
-//	@Accept			json
-//	@Success		201	{object}		JobInfo
-//	@Failure		500	system_error	system	error
-//	@Router			/v1/job [post]
+// @Summary		Create
+// @Description	create finetune
+// @Tags			Finetune
+// @Param			body	body	JobInfo	true	"body of creating finetune"
+// @Accept			json
+// @Success		201	{object}		JobInfo
+// @Failure		500	system_error	system	error
+// @Router			/v1/job [post]
 func createJob(c *gin.Context) {
 	// 从请求中获取作业相关参数
 	var jobInfo JobInfo
@@ -259,14 +259,14 @@ func createJob(c *gin.Context) {
 	})
 }
 
-//	@Summary		get a websocket to watch a finetune log
-//	@Description	watch single finetune
-//	@Tags			Finetune
-//	@Param			jobname	path	string	true	"finetune id"
-//	@Accept			json
-//	@Success		200	{object}		string
-//	@Failure		500	system_error	system	error
-//	@Router			/v1/log/{jobname} [get]
+// @Summary		get a websocket to watch a finetune log
+// @Description	watch single finetune
+// @Tags			Finetune
+// @Param			jobname	path	string	true	"finetune id"
+// @Accept			json
+// @Success		200	{object}		string
+// @Failure		500	system_error	system	error
+// @Router			/v1/log/{jobname} [get]
 func getJobLogs(c *gin.Context) {
 	// 从路径参数中获取作业名称和命名空间
 	jobName := c.Param("jobname")
@@ -323,7 +323,7 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 				break
 			}
 			if n > 0 {
-				if err := ws.WriteMessage(websocket.TextMessage, buf[:n]); err != nil {
+				if err := ws.WriteMessage(websocket.BinaryMessage, buf[:n]); err != nil {
 					break
 				}
 			}
@@ -333,14 +333,14 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 	return nil
 }
 
-//	@Summary		Delete
-//	@Description	delete finetune
-//	@Tags			Finetune
-//	@Param			jobname	path	string	true	"finetune id"
-//	@Accept			json
-//	@Success		200
-//	@Failure		500	system_error	system	error
-//	@Router			/v1/job/{jobname} [delete]
+// @Summary		Delete
+// @Description	delete finetune
+// @Tags			Finetune
+// @Param			jobname	path	string	true	"finetune id"
+// @Accept			json
+// @Success		200
+// @Failure		500	system_error	system	error
+// @Router			/v1/job/{jobname} [delete]
 func deleteJob(c *gin.Context) {
 	// 从路径参数中获取作业名称
 	jobname := c.Param("jobname")
@@ -444,7 +444,7 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 					},
 				},
 			},
-			BackoffLimit: pointer.Int32(4),
+			BackoffLimit: pointer.Int32(1),
 		},
 	}
 
