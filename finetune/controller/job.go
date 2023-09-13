@@ -344,10 +344,12 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 		for {
 			n, err := podLogs.Read(buf)
 			if err != nil {
+				logrus.Warningf("read pod logs end: %s", err.Error())
 				break
 			}
 			if n > 0 {
 				if err := ws.WriteMessage(websocket.BinaryMessage, buf[:n]); err != nil {
+					logrus.Warningf("write socket end: %s", err.Error())
 					break
 				}
 			}
@@ -531,7 +533,7 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 
 func checkDeletePerm(clientset *kubernetes.Clientset, jobName, namespace, secret string) error {
 	if secret == "" {
-		return allerror.New(allerror.ErrorPermissionDeny, "Permission denied, empty finetune")
+		return allerror.New(allerror.ErrorPermissionDeny, "Permission denied, empty finetune token")
 	}
 	// 删除job
 	job, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
