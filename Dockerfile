@@ -8,7 +8,7 @@ RUN cd /go/src/github.com/opensourceways/foundation-model-server && GOPROXY=http
 
 # copy binary config and utils
 FROM openeuler/openeuler:22.03
-RUN dnf update -y && dnf in -y shadow
+RUN dnf update -y && dnf in -y shadow net-tools
 RUN groupadd -g 1000 fms
 RUN useradd -u 1000 -g fms -s /bin/bash -m fms
 USER fms

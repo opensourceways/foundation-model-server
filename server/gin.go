@@ -23,7 +23,6 @@ import (
 	"github.com/sirupsen/logrus"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	timeout "github.com/vearne/gin-timeout"
 )
 
 func StartWebServer(port int, timeout time.Duration, cfg *config.Config) {
@@ -53,7 +52,7 @@ func StartWebServer(port int, timeout time.Duration, cfg *config.Config) {
 	interrupts.ListenAndServe(srv, timeout)
 }
 
-//setRouter init router
+// setRouter init router
 func setRouter(engine *gin.Engine, cfg *config.Config) {
 	docs.SwaggerInfo.BasePath = "/api"
 	docs.SwaggerInfo.Title = "Foundation Model"
@@ -83,23 +82,6 @@ func setApiV1(v1 *gin.RouterGroup, cfg *config.Config) {
 		v1, chatapp.NewChatAppService(s),
 	)
 	finetunectl.RegisterRoutes(v1)
-}
-
-func timeoutResponse(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusRequestTimeout, gin.H{
-		"code": fmt.Sprint(allerror.ErrorCodeReqTimeout),
-		"msg":  http.StatusRequestTimeout,
-	})
-}
-
-// RequestTimeout 处理请求超时
-func timeoutMiddleware(t int) gin.HandlerFunc {
-	defaultMsg := `{"code": 10004, "msg":"request timeout"}`
-	return timeout.Timeout(
-		timeout.WithTimeout(time.Duration(t)*time.Second),
-		timeout.WithErrorHttpCode(http.StatusRequestTimeout),
-		timeout.WithDefaultMsg(defaultMsg),
-	)
 }
 
 func logRequest() gin.HandlerFunc {
