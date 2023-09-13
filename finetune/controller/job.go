@@ -199,6 +199,16 @@ func getEnvs(job *batchv1.Job, skipSecret bool) (envs map[string]string, err err
 	return
 }
 
+func validFinetuneToken(secret string) bool {
+	for _, token := range tokens {
+		if token == secret {
+			return true
+		}
+	}
+
+	return false
+}
+
 // @Summary		Create
 // @Description	create finetune
 // @Tags			Finetune
@@ -210,7 +220,7 @@ func getEnvs(job *batchv1.Job, skipSecret bool) (envs map[string]string, err err
 func createJob(c *gin.Context) {
 	// 从请求中获取作业相关参数
 	var jobInfo JobInfo
-
+	secret := c.GetHeader(headerSecret)
 	// 解析JSON请求体
 	if err := c.ShouldBindJSON(&jobInfo); err != nil {
 		commonctl.SendBadRequestBody(c, err)
@@ -222,6 +232,20 @@ func createJob(c *gin.Context) {
 		err := fmt.Errorf("invalid params")
 		logrus.Error(err)
 		commonctl.SendBadRequestBody(c, err)
+		return
+	}
+
+	if secret == "" {
+		err := allerror.New(allerror.ErrorPermissionDeny, "Permission denied, empty finetune token")
+		logrus.Error(err)
+		commonctl.SendFailedResp(c, err)
+		return
+	}
+
+	if !validFinetuneToken(secret) {
+		err := allerror.New(allerror.ErrorPermissionDeny, "Permission denied, invalid finetune token")
+		logrus.Error(err)
+		commonctl.SendFailedResp(c, err)
 		return
 	}
 
@@ -507,7 +531,7 @@ func doCreateJob(clientset *kubernetes.Clientset, username, dataset, model strin
 
 func checkDeletePerm(clientset *kubernetes.Clientset, jobName, namespace, secret string) error {
 	if secret == "" {
-		return allerror.New(allerror.ErrorPermissionDeny, "Permission denied, empty secret")
+		return allerror.New(allerror.ErrorPermissionDeny, "Permission denied, empty finetune")
 	}
 	// 删除job
 	job, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
