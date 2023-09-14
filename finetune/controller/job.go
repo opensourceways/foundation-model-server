@@ -314,6 +314,25 @@ func getJobLogs(c *gin.Context) {
 	}
 }
 
+func startPingTimer(conn *websocket.Conn) *time.Timer {
+	timer := time.NewTimer(60 * time.Second)
+
+	go func() {
+		for range timer.C {
+			err := conn.WriteMessage(websocket.PingMessage, nil)
+			if err != nil {
+				logrus.Infoln("Write ping error:", err)
+			} else {
+				logrus.Infoln("Ping sent to client")
+			}
+			// 重置定时器
+			timer.Reset(60 * time.Second)
+		}
+	}()
+
+	return timer
+}
+
 func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, jobName string) error {
 
 	ctx := context.TODO()
@@ -326,6 +345,10 @@ func doWatchJob(ws *websocket.Conn, clientset *kubernetes.Clientset, namespacm, 
 		err = fmt.Errorf("get job failed")
 		return err
 	}
+
+	// 启动goroutine发送ping消息
+	timer := startPingTimer(ws)
+	defer timer.Stop()
 
 	for _, pod := range podList.Items {
 		req := clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
